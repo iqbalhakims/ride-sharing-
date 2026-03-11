@@ -34,6 +34,9 @@ jobs:
           - service: notification-service
             context: .
             dockerfile: services/notification-service/Dockerfile
+          - service: frontend
+            context: ./frontend
+            dockerfile: frontend/Dockerfile
 
     steps:
       - name: Checkout code
