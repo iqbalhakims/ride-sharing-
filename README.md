@@ -379,6 +379,18 @@ Set automatically by Docker Compose. For local development, create a `.env` in t
 
 ---
 
+## Bug Fixes
+
+### `Cannot find module 'dotenv/config'` on startup
+**Root cause:** `dotenv` was used in every service's `index.ts` but was never declared in `dependencies` — only available at dev time, not in the Docker image.
+**Fix:** Added `"dotenv": "^16.0.0"` to `dependencies` in all 6 service `package.json` files.
+
+### PostgreSQL healthcheck failing (`database "ride" does not exist`)
+**Root cause:** The healthcheck `pg_isready -U ride` defaults to connecting to a database named after the user (`ride`), but the actual database is `ride_sharing`.
+**Fix:** Updated the healthcheck in `docker-compose.yml` to `pg_isready -U ride -d ride_sharing`.
+
+---
+
 ## Future Plans
 
 - Kubernetes deployment with HPA autoscaling
