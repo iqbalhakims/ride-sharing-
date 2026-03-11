@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RideShare — Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-50">
+
+  <!-- Navbar -->
+  <header class="bg-indigo-600 text-white px-6 py-4 flex items-center justify-between shadow-md">
+    <div class="flex items-center gap-3">
+      <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.08 3.11H5.77L6.85 7zM19 17H5v-5h14v5z"/>
+        <circle cx="7.5" cy="14.5" r="1.5"/>
+        <circle cx="16.5" cy="14.5" r="1.5"/>
+      </svg>
+      <span class="text-xl font-bold">RideShare</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <div id="userInfo" class="text-sm text-indigo-200 hidden">
+        <span id="userName"></span>
+        <span id="userRole" class="ml-2 bg-indigo-500 text-white text-xs px-2 py-0.5 rounded-full uppercase font-semibold"></span>
+      </div>
+      <button onclick="logout()"
+        class="text-sm bg-indigo-500 hover:bg-indigo-400 px-4 py-2 rounded-lg font-medium transition">
+        Logout
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto p-6 space-y-6">
+
+    <!-- Profile Card -->
+    <div class="bg-white rounded-2xl shadow p-6">
+      <div class="flex items-center gap-4">
+        <div id="avatarCircle"
+          class="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-2xl font-bold text-indigo-600">
+          ?
+        </div>
+        <div>
+          <h2 id="profileEmail" class="text-lg font-semibold text-gray-800">Loading…</h2>
+          <p id="profileRole" class="text-sm text-gray-500"></p>
+          <p id="profilePhone" class="text-sm text-gray-400 mt-0.5"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Book a Ride -->
+    <div class="bg-white rounded-2xl shadow p-6">
+      <h2 class="text-lg font-semibold text-gray-800 mb-5">Book a Ride</h2>
+
+      <!-- Pickup -->
+      <div class="mb-4">
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Pickup</label>
+        <div class="grid grid-cols-3 gap-3">
+          <input id="pickup-addr" type="text" placeholder="Address" value="Jl. Sudirman No.1"
+            class="col-span-3 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <input id="pickup-lat" type="number" step="any" placeholder="Lat" value="-6.2088"
+            class="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <input id="pickup-lng" type="number" step="any" placeholder="Lng" value="106.8456"
+            class="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <div></div>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="flex items-center gap-3 my-4">
+        <div class="flex-1 border-t border-dashed border-gray-200"></div>
+        <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+        </svg>
+        <div class="flex-1 border-t border-dashed border-gray-200"></div>
+      </div>
+
+      <!-- Dropoff -->
+      <div class="mb-6">
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Dropoff</label>
+        <div class="grid grid-cols-3 gap-3">
+          <input id="dropoff-addr" type="text" placeholder="Address" value="Jl. Thamrin No.5"
+            class="col-span-3 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <input id="dropoff-lat" type="number" step="any" placeholder="Lat" value="-6.1751"
+            class="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <input id="dropoff-lng" type="number" step="any" placeholder="Lng" value="106.8650"
+            class="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <div></div>
+        </div>
+      </div>
+
+      <button onclick="bookRide()"
+        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition text-sm">
+        Request Ride
+      </button>
+
+      <!-- Booking result -->
+      <div id="bookResult" class="hidden mt-4 rounded-xl p-4 text-sm"></div>
+    </div>
+
+    <!-- Ride History -->
+    <div class="bg-white rounded-2xl shadow p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-800">My Rides</h2>
+        <button onclick="loadHistory()"
+          class="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition">
+          Refresh
+        </button>
+      </div>
+      <div id="rideHistory" class="space-y-3 text-sm text-gray-500">
+        Loading…
+      </div>
+    </div>
+
+  </main>
+
+<script>
+  const SERVICES = {
+    auth: 'http://localhost:3001',
+    ride: 'http://localhost:3003',
+  };
+
+  const token = localStorage.getItem('token');
+  if (!token) window.location.href = 'index.html';
+
+  async function apiFetch(method, service, path, body = null) {
+    const res = await fetch(`${SERVICES[service]}${path}`, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, status: res.status, data };
+  }
+
+  async function loadProfile() {
+    try {
+      const res = await apiFetch('GET', 'auth', '/auth/me');
+      if (!res.ok) { logout(); return; }
+      const user = res.data.user || res.data;
+
+      // Navbar
+      document.getElementById('userInfo').classList.remove('hidden');
+      document.getElementById('userName').textContent = user.email;
+      document.getElementById('userRole').textContent = user.role;
+
+      // Profile card
+      document.getElementById('avatarCircle').textContent = user.email[0].toUpperCase();
+      document.getElementById('profileEmail').textContent = user.email;
+      document.getElementById('profileRole').textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+      if (user.phone) document.getElementById('profilePhone').textContent = user.phone;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function bookRide() {
+    const resultEl = document.getElementById('bookResult');
+    resultEl.className = 'hidden mt-4 rounded-xl p-4 text-sm';
+
+    try {
+      const res = await apiFetch('POST', 'ride', '/rides', {
+        pickupLocation: {
+          lat: parseFloat(document.getElementById('pickup-lat').value),
+          lng: parseFloat(document.getElementById('pickup-lng').value),
+          address: document.getElementById('pickup-addr').value,
+        },
+        dropoffLocation: {
+          lat: parseFloat(document.getElementById('dropoff-lat').value),
+          lng: parseFloat(document.getElementById('dropoff-lng').value),
+          address: document.getElementById('dropoff-addr').value,
+        },
+      });
+
+      resultEl.classList.remove('hidden');
+      if (res.ok) {
+        const ride = res.data.ride || res.data;
+        resultEl.className = 'mt-4 rounded-xl p-4 text-sm bg-green-50 text-green-800';
+        resultEl.innerHTML = `
+          <div class="font-semibold mb-1">Ride requested!</div>
+          <div class="text-xs text-green-700 font-mono">${ride.id}</div>
+          <div class="text-xs mt-1 text-green-600">Status: <strong>${ride.status}</strong></div>
+        `;
+        loadHistory();
+      } else {
+        resultEl.className = 'mt-4 rounded-xl p-4 text-sm bg-red-50 text-red-700';
+        resultEl.textContent = res.data.message || 'Failed to request ride.';
+      }
+    } catch (e) {
+      resultEl.classList.remove('hidden');
+      resultEl.className = 'mt-4 rounded-xl p-4 text-sm bg-red-50 text-red-700';
+      resultEl.textContent = 'Cannot connect to ride service.';
+    }
+  }
+
+  async function loadHistory() {
+    const container = document.getElementById('rideHistory');
+    try {
+      const res = await apiFetch('GET', 'ride', '/rides/history');
+      const rides = res.data.rides || res.data || [];
+      if (!Array.isArray(rides) || rides.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-sm">No rides yet.</p>';
+        return;
+      }
+      container.innerHTML = rides.map(r => {
+        const statusColor = {
+          pending: 'bg-yellow-100 text-yellow-700',
+          accepted: 'bg-blue-100 text-blue-700',
+          ongoing: 'bg-indigo-100 text-indigo-700',
+          completed: 'bg-green-100 text-green-700',
+          cancelled: 'bg-red-100 text-red-700',
+        }[r.status] || 'bg-gray-100 text-gray-600';
+
+        return `
+          <div class="flex items-center justify-between border border-gray-100 rounded-xl px-4 py-3">
+            <div>
+              <div class="text-xs font-mono text-gray-400 mb-0.5">${r.id?.slice(0, 8)}…</div>
+              <div class="text-sm text-gray-700">
+                ${r.pickup_address || '—'} → ${r.dropoff_address || '—'}
+              </div>
+            </div>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full ${statusColor}">${r.status}</span>
+          </div>
+        `;
+      }).join('');
+    } catch (e) {
+      container.innerHTML = '<p class="text-red-400 text-sm">Failed to load rides.</p>';
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    window.location.href = 'index.html';
+  }
+
+  // Init
+  loadProfile();
+  loadHistory();
+</script>
+</body>
+</html>
