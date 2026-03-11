@@ -60,6 +60,7 @@
           <option value="driver">Driver</option>
         </select>
         <button onclick="register()" class="btn-primary w-full">Register</button>
+        <pre id="regOutput" class="hidden bg-gray-50 rounded p-3 text-xs font-mono text-gray-700 overflow-auto max-h-32"></pre>
       </div>
     </div>
 
@@ -397,6 +398,10 @@
       password: document.getElementById('reg-password').value,
       role: document.getElementById('reg-role').value,
     });
+    const out = document.getElementById('regOutput');
+    out.classList.remove('hidden');
+    out.style.color = res.ok ? '#16a34a' : '#dc2626';
+    out.textContent = JSON.stringify(res.data, null, 2);
   }
 
   async function login() {
