@@ -17,6 +17,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
 COPY --from=builder /app/services/driver-service/dist ./services/driver-service/dist
+COPY --from=builder /app/services/driver-service/src/db/migrations ./services/driver-service/dist/db/migrations
 COPY --from=builder /app/services/driver-service/package.json ./services/driver-service/package.json
 WORKDIR /app/services/driver-service
 EXPOSE 3002

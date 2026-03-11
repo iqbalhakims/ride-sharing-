@@ -17,6 +17,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
 COPY --from=builder /app/services/ride-service/dist ./services/ride-service/dist
+COPY --from=builder /app/services/ride-service/src/db/migrations ./services/ride-service/dist/db/migrations
 COPY --from=builder /app/services/ride-service/package.json ./services/ride-service/package.json
 WORKDIR /app/services/ride-service
 EXPOSE 3003

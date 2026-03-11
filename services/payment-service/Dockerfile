@@ -17,6 +17,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
 COPY --from=builder /app/services/payment-service/dist ./services/payment-service/dist
+COPY --from=builder /app/services/payment-service/src/db/migrations ./services/payment-service/dist/db/migrations
 COPY --from=builder /app/services/payment-service/package.json ./services/payment-service/package.json
 WORKDIR /app/services/payment-service
 EXPOSE 3005

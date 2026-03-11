@@ -17,6 +17,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
 COPY --from=builder /app/services/auth-service/dist ./services/auth-service/dist
+COPY --from=builder /app/services/auth-service/src/db/migrations ./services/auth-service/dist/db/migrations
 COPY --from=builder /app/services/auth-service/package.json ./services/auth-service/package.json
 WORKDIR /app/services/auth-service
 EXPOSE 3001
