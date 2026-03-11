@@ -43,6 +43,20 @@ export async function findByUser(
   return { rides, total: parseInt(count as string, 10) };
 }
 
+export async function findAll(
+  page = 1,
+  limit = 20,
+  status?: string,
+): Promise<{ rides: Ride[]; total: number }> {
+  const query = db('rides');
+  if (status) query.where({ status });
+  const countQuery = db('rides');
+  if (status) countQuery.where({ status });
+  const [{ count }] = await countQuery.count('id as count');
+  const rides = await query.orderBy('requested_at', 'desc').limit(limit).offset((page - 1) * limit);
+  return { rides, total: parseInt(count as string, 10) };
+}
+
 export async function logEvent(rideId: string, eventType: string, payload: unknown): Promise<void> {
   await db('ride_events').insert({ ride_id: rideId, event_type: eventType, payload });
 }

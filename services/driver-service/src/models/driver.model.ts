@@ -23,6 +23,26 @@ export async function update(
   return driver;
 }
 
+export async function findAll(
+  page = 1,
+  limit = 20,
+): Promise<{ drivers: Driver[]; total: number }> {
+  const [{ count }] = await db('drivers').count('id as count');
+  const drivers = await db('drivers')
+    .orderBy('created_at', 'desc')
+    .limit(limit)
+    .offset((page - 1) * limit);
+  return { drivers, total: parseInt(count as string, 10) };
+}
+
+export async function setVerified(id: string, is_verified: boolean): Promise<Driver> {
+  const [driver] = await db('drivers')
+    .where({ id })
+    .update({ is_verified, updated_at: new Date() })
+    .returning('*');
+  return driver;
+}
+
 export async function updateAvailability(id: string, is_available: boolean): Promise<Driver> {
   const [driver] = await db('drivers')
     .where({ id })

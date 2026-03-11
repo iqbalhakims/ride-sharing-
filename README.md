@@ -14,6 +14,7 @@ A **microservices-based ride-sharing backend** (think Uber/Grab) built with Node
 - [How Services Talk to Each Other](#how-services-talk-to-each-other)
 - [A Full Ride Lifecycle](#a-full-ride-lifecycle)
 - [API Reference](#api-reference)
+- [Load Testing](#load-testing)
 - [Project Structure](#project-structure)
 - [Environment Variables](#environment-variables)
 - [Tech Stack](#tech-stack)
@@ -285,6 +286,56 @@ Messages you receive:
 
 ---
 
+## Load Testing
+
+Simulates **500 concurrent users** — 400 riders booking rides and 100 drivers accepting them — using [k6](https://k6.io).
+
+### Install k6
+
+```bash
+brew install k6
+```
+
+### Run the simulation
+
+```bash
+# Make sure all services are up first
+docker-compose up
+
+# Run with default ports
+k6 run scripts/load-test.js
+
+# Or specify service ports explicitly
+k6 run scripts/load-test.js \
+  -e BASE_URL=http://localhost:3003 \
+  -e AUTH_URL=http://localhost:3001
+
+# Real-time browser dashboard
+k6 run --out web-dashboard scripts/load-test.js
+```
+
+### What it simulates
+
+| Users | Role | Flow |
+|---|---|---|
+| 400 | Riders | Login → Request ride → Check status → View history |
+| 100 | Drivers | Login → Accept ride → Start ride → End ride |
+
+Drivers start 10 seconds after riders to mimic real-world timing.
+
+### Pass/fail thresholds
+
+| Metric | Threshold |
+|---|---|
+| 95th percentile response time | < 2 seconds |
+| Overall error rate | < 5% |
+| Login error rate | < 1% |
+| Ride request error rate | < 5% |
+
+The test fails if any threshold is breached — useful for CI gating.
+
+---
+
 ## Project Structure
 
 ```
@@ -310,7 +361,8 @@ ride-sharing/
 │   └── notification-service/
 │
 └── scripts/
-    └── init-db.sql             # Creates auth_db, driver_db, ride_db, payment_db
+    ├── init-db.sql             # Creates auth_db, driver_db, ride_db, payment_db
+    └── load-test.js            # k6 load test — 500 concurrent users
 ```
 
 ### Inside each service
@@ -400,7 +452,7 @@ Set automatically by Docker Compose. For local development, create a `.env` in t
 - Kubernetes deployment with HPA autoscaling
 - Observability stack (Prometheus, Grafana, Loki, Tempo)
 - GitOps with ArgoCD
-- Load testing with k6
+- ~~Load testing with k6~~ ✓ Done
 - Surge pricing algorithm
 - Service mesh integration
 

@@ -2,8 +2,12 @@ import { Router } from 'express';
 import { authMiddleware, requireRole } from '@ride-sharing/shared';
 import * as profileController from '../controllers/profile.controller';
 import * as locationController from '../controllers/location.controller';
+import * as adminController from '../controllers/admin.controller';
 
 const router = Router();
+
+router.get('/', authMiddleware, requireRole('admin'), adminController.listAllDrivers);
+router.patch('/:id/verify', authMiddleware, requireRole('admin'), adminController.verifyDriver);
 
 router.get('/me', authMiddleware, requireRole('driver'), profileController.getMyProfile);
 router.patch('/me', authMiddleware, requireRole('driver'), profileController.updateMyProfile);

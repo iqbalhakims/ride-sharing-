@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import { authMiddleware, requireRole } from '@ride-sharing/shared';
 import * as controller from '../controllers/ride.controller';
+import * as adminController from '../controllers/admin.controller';
 
 const router = Router();
+
+router.get('/all', authMiddleware, requireRole('admin'), adminController.listAllRides);
 
 router.post('/', authMiddleware, requireRole('rider'), controller.requestRide);
 router.get('/history', authMiddleware, controller.getRideHistory);
