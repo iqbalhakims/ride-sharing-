@@ -134,7 +134,7 @@
       }
       localStorage.setItem('token', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
-      window.location.href = 'dashboard.html';
+      window.location.href = data.user.role === 'admin' ? 'admin.html' : 'dashboard.html';
     } catch (e) {
       errEl.textContent = 'Cannot connect to server. Is the auth service running?';
       errEl.classList.remove('hidden');

@@ -195,7 +195,7 @@
     const RIDE = 'http://localhost:3003';
     const DRIVER = 'http://localhost:3002';
 
-    let token = localStorage.getItem('accessToken');
+    let token = localStorage.getItem('token');
     let currentTab = 'overview';
     let ridesCurrent = 1, usersCurrent = 1, driversCurrent = 1;
 
@@ -220,7 +220,7 @@
     }
 
     function logout() {
-      localStorage.removeItem('accessToken');
+      localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
       window.location.href = 'index.html';
     }
