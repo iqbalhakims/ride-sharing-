@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ride Sharing — Test UI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .tab-btn.active { @apply bg-white text-indigo-600 shadow; }
+    .log-entry { font-size: 12px; font-family: monospace; }
+    .log-entry.success { color: #16a34a; }
+    .log-entry.error { color: #dc2626; }
+    .log-entry.info { color: #2563eb; }
+    .log-entry.ws { color: #7c3aed; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+<!-- Header -->
+<header class="bg-indigo-600 text-white px-6 py-4 flex items-center justify-between shadow">
+  <div class="flex items-center gap-3">
+    <span class="text-2xl font-bold">RideShare</span>
+    <span class="text-indigo-200 text-sm">Test UI</span>
+  </div>
+  <div id="userBadge" class="hidden bg-indigo-500 rounded-full px-4 py-1 text-sm flex items-center gap-2">
+    <span id="userEmail" class="font-medium"></span>
+    <span id="userRole" class="bg-indigo-400 rounded px-2 py-0.5 text-xs uppercase"></span>
+    <button onclick="logout()" class="ml-2 text-indigo-200 hover:text-white text-xs underline">logout</button>
+  </div>
+</header>
+
+<!-- Tabs -->
+<div class="bg-indigo-50 border-b border-indigo-200 px-6">
+  <nav class="flex gap-1 py-2">
+    <button class="tab-btn px-4 py-2 rounded-t text-sm font-medium text-gray-600 hover:text-indigo-600 transition" onclick="switchTab('auth')" id="tab-auth">Auth</button>
+    <button class="tab-btn px-4 py-2 rounded-t text-sm font-medium text-gray-600 hover:text-indigo-600 transition" onclick="switchTab('rider')" id="tab-rider">Rider</button>
+    <button class="tab-btn px-4 py-2 rounded-t text-sm font-medium text-gray-600 hover:text-indigo-600 transition" onclick="switchTab('driver')" id="tab-driver">Driver</button>
+    <button class="tab-btn px-4 py-2 rounded-t text-sm font-medium text-gray-600 hover:text-indigo-600 transition" onclick="switchTab('payment')" id="tab-payment">Payments</button>
+    <button class="tab-btn px-4 py-2 rounded-t text-sm font-medium text-gray-600 hover:text-indigo-600 transition" onclick="switchTab('ws')" id="tab-ws">
+      Notifications
+      <span id="wsIndicator" class="inline-block w-2 h-2 rounded-full bg-gray-400 ml-1"></span>
+    </button>
+    <button class="tab-btn px-4 py-2 rounded-t text-sm font-medium text-gray-600 hover:text-indigo-600 transition" onclick="switchTab('log')" id="tab-log">Log</button>
+  </nav>
+</div>
+
+<main class="max-w-4xl mx-auto p-6 space-y-4">
+
+  <!-- ======== AUTH TAB ======== -->
+  <div id="pane-auth" class="tab-pane grid grid-cols-2 gap-4">
+    <!-- Register -->
+    <div class="bg-white rounded-xl shadow p-5">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4">Register</h2>
+      <div class="space-y-3">
+        <input id="reg-email" type="email" placeholder="Email" class="input w-full" />
+        <input id="reg-phone" type="text" placeholder="Phone (e.g. +1234567890)" class="input w-full" />
+        <input id="reg-password" type="password" placeholder="Password" class="input w-full" />
+        <select id="reg-role" class="input w-full">
+          <option value="rider">Rider</option>
+          <option value="driver">Driver</option>
+        </select>
+        <button onclick="register()" class="btn-primary w-full">Register</button>
+      </div>
+    </div>
+
+    <!-- Login -->
+    <div class="bg-white rounded-xl shadow p-5">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4">Login</h2>
+      <div class="space-y-3">
+        <input id="login-email" type="email" placeholder="Email" class="input w-full" />
+        <input id="login-password" type="password" placeholder="Password" class="input w-full" />
+        <button onclick="login()" class="btn-primary w-full">Login</button>
+      </div>
+      <div id="tokenBox" class="hidden mt-4">
+        <p class="text-xs text-gray-500 mb-1 font-medium">Access Token</p>
+        <textarea id="tokenDisplay" rows="3" class="w-full text-xs bg-gray-50 border rounded p-2 font-mono break-all" readonly></textarea>
+        <button onclick="connectWs()" class="btn-secondary w-full mt-2">Connect WebSocket</button>
+      </div>
+    </div>
+
+    <!-- Me -->
+    <div class="bg-white rounded-xl shadow p-5 col-span-2">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-semibold text-gray-800">My Profile</h2>
+        <button onclick="getMe()" class="btn-secondary">Fetch /auth/me</button>
+      </div>
+      <pre id="meOutput" class="bg-gray-50 rounded p-3 text-xs font-mono text-gray-700 overflow-auto max-h-40">—</pre>
+    </div>
+  </div>
+
+  <!-- ======== RIDER TAB ======== -->
+  <div id="pane-rider" class="tab-pane hidden space-y-4">
+    <!-- Request Ride -->
+    <div class="bg-white rounded-xl shadow p-5">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4">Request a Ride</h2>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="label">Pickup Lat</label>
+          <input id="pickup-lat" type="number" step="any" placeholder="-6.2088" value="-6.2088" class="input w-full" />
+        </div>
+        <div>
+          <label class="label">Pickup Lng</label>
+          <input id="pickup-lng" type="number" step="any" placeholder="106.8456" value="106.8456" class="input w-full" />
+        </div>
+        <div>
+          <label class="label">Pickup Address</label>
+          <input id="pickup-addr" type="text" placeholder="Jl. Sudirman No.1" value="Jl. Sudirman No.1" class="input w-full" />
+        </div>
+        <div>
+          <label class="label">Dropoff Lat</label>
+          <input id="dropoff-lat" type="number" step="any" placeholder="-6.1751" value="-6.1751" class="input w-full" />
+        </div>
+        <div>
+          <label class="label">Dropoff Lng</label>
+          <input id="dropoff-lng" type="number" step="any" placeholder="106.8650" value="106.8650" class="input w-full" />
+        </div>
+        <div>
+          <label class="label">Dropoff Address</label>
+          <input id="dropoff-addr" type="text" placeholder="Jl. Thamrin No.5" value="Jl. Thamrin No.5" class="input w-full" />
+        </div>
+      </div>
+      <button onclick="requestRide()" class="btn-primary mt-4">Request Ride</button>
+      <pre id="rideOutput" class="bg-gray-50 rounded p-3 text-xs font-mono text-gray-700 mt-3 overflow-auto max-h-40">—</pre>
+    </div>
+
+    <!-- Ride Actions -->
+    <div class="bg-white rounded-xl shadow p-5">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4">Ride Actions</h2>
+      <div class="flex gap-2 items-center flex-wrap">
+        <input id="rideId" type="text" placeholder="Ride ID" class="input flex-1 min-w-40" />
+        <button onclick="getRide()" class="btn-secondary">Get</button>
+        <button onclick="cancelRide()" class="btn-danger">Cancel</button>
+      </div>
+      <pre id="rideActionOutput" class="bg-gray-50 rounded p-3 text-xs font-mono text-gray-700 mt-3 overflow-auto max-h-40">—</pre>
+    </div>
+
+    <!-- Ride History -->
+    <div class="bg-white rounded-xl shadow p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-semibold text-gray-800">Ride History</h2>
+        <button onclick="getRideHistory()" class="btn-secondary">Fetch History</button>
+      </div>
+      <div id="rideHistory" class="space-y-2 text-sm text-gray-600">—</div>
+    </div>
+  </div>
+
+  <!-- ======== DRIVER TAB ======== -->
+  <div id="pane-driver" class="tab-pane hidden space-y-4">
+    <!-- Driver Profile -->
+    <div class="bg-white rounded-xl shadow p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-800">Driver Profile</h2>
+        <button onclick="getDriverProfile()" class="btn-secondary">Fetch</button>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="label">First Name</label>
+          <input id="drv-fname" type="text" placeholder="John" class="input w-full" />
+        </div>
+        <div>
+          <label class="label">Last Name</label>
+          <input id="drv-lname" type="text" placeholder="Doe" class="input w-full" />
+        </div>
+        <div>
+          <label class="label">License No</label>
+          <input id="drv-license" type="text" placeholder="B1234567" class="input w-full" />
+        </div>
+        <div>
+          <label class="label">Vehicle Make</label>
+          <input id="drv-make" type="text" placeholder="Toyota" class="input w-full" />
+        </div>
+        <div>
+          <label class="label">Vehicle Model</label>
+          <input id="drv-model" type="text" placeholder="Avanza" class="input w-full" />
+        </div>
+        <div>
+          <label class="label">Vehicle Plate</label>
+          <input id="drv-plate" type="text" placeholder="B 1234 XY" class="input w-full" />
+        </div>
+      </div>
+      <button onclick="updateDriverProfile()" class="btn-primary mt-4">Update Profile</button>
+      <pre id="drvProfileOutput" class="bg-gray-50 rounded p-3 text-xs font-mono text-gray-700 mt-3 overflow-auto max-h-32">—</pre>
+    </div>
+
+    <!-- Location & Availability -->
+    <div class="grid grid-cols-2 gap-4">
+      <div class="bg-white rounded-xl shadow p-5">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Update Location</h2>
+        <div class="space-y-3">
+          <div>
+            <label class="label">Latitude</label>
+            <input id="drv-lat" type="number" step="any" placeholder="-6.2088" value="-6.2088" class="input w-full" />
+          </div>
+          <div>
+            <label class="label">Longitude</label>
+            <input id="drv-lng" type="number" step="any" placeholder="106.8456" value="106.8456" class="input w-full" />
+          </div>
+          <button onclick="updateLocation()" class="btn-primary w-full">Update Location</button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow p-5">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Availability</h2>
+        <div class="space-y-3">
+          <div class="flex gap-3">
+            <button onclick="setAvailability(true)" class="btn-primary flex-1">Set Available</button>
+            <button onclick="setAvailability(false)" class="btn-danger flex-1">Set Unavailable</button>
+          </div>
+          <pre id="drvAvailOutput" class="bg-gray-50 rounded p-3 text-xs font-mono text-gray-700 overflow-auto max-h-24">—</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Driver Ride Management -->
+    <div class="bg-white rounded-xl shadow p-5">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4">Ride Management (Driver)</h2>
+      <div class="flex gap-2 items-center flex-wrap">
+        <input id="drvRideId" type="text" placeholder="Ride ID" class="input flex-1 min-w-40" />
+        <button onclick="acceptRide()" class="btn-primary">Accept</button>
+        <button onclick="startRide()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Start</button>
+        <button onclick="endRide()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">End</button>
+      </div>
+      <pre id="drvRideOutput" class="bg-gray-50 rounded p-3 text-xs font-mono text-gray-700 mt-3 overflow-auto max-h-40">—</pre>
+    </div>
+  </div>
+
+  <!-- ======== PAYMENT TAB ======== -->
+  <div id="pane-payment" class="tab-pane hidden space-y-4">
+    <!-- Payment for Ride -->
+    <div class="bg-white rounded-xl shadow p-5">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4">Get Payment for Ride</h2>
+      <div class="flex gap-2">
+        <input id="pay-rideId" type="text" placeholder="Ride ID" class="input flex-1" />
+        <button onclick="getPayment()" class="btn-primary">Fetch</button>
+      </div>
+      <pre id="paymentOutput" class="bg-gray-50 rounded p-3 text-xs font-mono text-gray-700 mt-3 overflow-auto max-h-40">—</pre>
+    </div>
+
+    <!-- Payment Methods -->
+    <div class="bg-white rounded-xl shadow p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-800">Payment Methods</h2>
+        <button onclick="getPaymentMethods()" class="btn-secondary">List Methods</button>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="label">Type</label>
+          <select id="pm-type" class="input w-full">
+            <option value="card">Card</option>
+            <option value="wallet">Wallet</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">Last Four Digits</label>
+          <input id="pm-lastfour" type="text" maxlength="4" placeholder="1234" class="input w-full" />
+        </div>
+        <div>
+          <label class="label">Provider Token</label>
+          <input id="pm-token" type="text" placeholder="tok_visa_1234" class="input w-full" />
+        </div>
+        <div class="flex items-end">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input id="pm-default" type="checkbox" class="w-4 h-4" />
+            <span class="text-sm text-gray-700">Set as default</span>
+          </label>
+        </div>
+      </div>
+      <button onclick="addPaymentMethod()" class="btn-primary">Add Method</button>
+      <div id="paymentMethodsList" class="mt-4 space-y-2">—</div>
+    </div>
+  </div>
+
+  <!-- ======== WEBSOCKET TAB ======== -->
+  <div id="pane-ws" class="tab-pane hidden space-y-4">
+    <div class="bg-white rounded-xl shadow p-5">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-lg font-semibold text-gray-800">WebSocket Notifications</h2>
+          <p class="text-sm text-gray-500">Connects to notification-service on port 3006</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="connectWs()" class="btn-primary">Connect</button>
+          <button onclick="disconnectWs()" class="btn-danger">Disconnect</button>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 mb-4">
+        <span id="wsStatus" class="inline-flex items-center gap-1.5 text-sm text-gray-500">
+          <span id="wsStatusDot" class="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
+          Disconnected
+        </span>
+      </div>
+      <div id="wsLog" class="bg-gray-900 text-gray-100 rounded-lg p-4 h-80 overflow-y-auto font-mono text-xs space-y-1">
+        <div class="text-gray-500">WebSocket messages will appear here...</div>
+      </div>
+      <button onclick="clearWsLog()" class="btn-secondary mt-2 text-xs">Clear Log</button>
+    </div>
+  </div>
+
+  <!-- ======== LOG TAB ======== -->
+  <div id="pane-log" class="tab-pane hidden">
+    <div class="bg-white rounded-xl shadow p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-800">API Request Log</h2>
+        <button onclick="clearLog()" class="btn-secondary text-xs">Clear</button>
+      </div>
+      <div id="logOutput" class="bg-gray-900 text-gray-100 rounded-lg p-4 h-[500px] overflow-y-auto font-mono text-xs space-y-1">
+        <div class="text-gray-500">API calls will be logged here...</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<style>
+  .input { @apply border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400; }
+  .label { @apply block text-xs text-gray-500 mb-1 font-medium; }
+  .btn-primary { @apply bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition; }
+  .btn-secondary { @apply bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition; }
+  .btn-danger { @apply bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition; }
+</style>
+
+<script>
+  const SERVICES = {
+    auth: 'http://localhost:3001',
+    driver: 'http://localhost:3002',
+    ride: 'http://localhost:3003',
+    payment: 'http://localhost:3005',
+    ws: 'ws://localhost:3006',
+  };
+
+  let token = null;
+  let refreshToken = null;
+  let currentUser = null;
+  let ws = null;
+
+  // ── Utilities ──────────────────────────────────────────────────────────────
+
+  function log(msg, type = 'info', data = null) {
+    const logOutput = document.getElementById('logOutput');
+    const time = new Date().toLocaleTimeString();
+    const line = document.createElement('div');
+    line.className = `log-entry ${type}`;
+    line.textContent = `[${time}] ${msg}`;
+    if (data) {
+      const detail = document.createElement('div');
+      detail.className = 'text-gray-400 ml-4 whitespace-pre-wrap';
+      detail.textContent = JSON.stringify(data, null, 2);
+      logOutput.appendChild(line);
+      logOutput.appendChild(detail);
+    } else {
+      logOutput.appendChild(line);
+    }
+    logOutput.scrollTop = logOutput.scrollHeight;
+    // Remove placeholder
+    const placeholder = logOutput.querySelector('.text-gray-500');
+    if (placeholder) placeholder.remove();
+  }
+
+  function clearLog() { document.getElementById('logOutput').innerHTML = '<div class="text-gray-500">API calls will be logged here...</div>'; }
+
+  async function api(method, service, path, body = null) {
+    const url = `${SERVICES[service]}${path}`;
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    log(`${method} ${url}`, 'info');
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        log(`  ✓ ${res.status}`, 'success', data);
+      } else {
+        log(`  ✗ ${res.status} ${data.message || JSON.stringify(data)}`, 'error');
+      }
+      return { ok: res.ok, status: res.status, data };
+    } catch (err) {
+      log(`  ✗ Network error: ${err.message}`, 'error');
+      return { ok: false, data: { error: err.message } };
+    }
+  }
+
+  function pretty(el, data) {
+    el.textContent = JSON.stringify(data, null, 2);
+  }
+
+  // ── Auth ──────────────────────────────────────────────────────────────────
+
+  async function register() {
+    const res = await api('POST', 'auth', '/auth/register', {
+      email: document.getElementById('reg-email').value,
+      phone: document.getElementById('reg-phone').value,
+      password: document.getElementById('reg-password').value,
+      role: document.getElementById('reg-role').value,
+    });
+  }
+
+  async function login() {
+    const res = await api('POST', 'auth', '/auth/login', {
+      email: document.getElementById('login-email').value,
+      password: document.getElementById('login-password').value,
+    });
+    if (res.ok && res.data.accessToken) {
+      token = res.data.accessToken;
+      refreshToken = res.data.refreshToken;
+      document.getElementById('tokenDisplay').value = token;
+      document.getElementById('tokenBox').classList.remove('hidden');
+      await getMe();
+    }
+  }
+
+  async function logout() {
+    await api('POST', 'auth', '/auth/logout');
+    token = null;
+    refreshToken = null;
+    currentUser = null;
+    document.getElementById('userBadge').classList.add('hidden');
+    document.getElementById('tokenBox').classList.add('hidden');
+    document.getElementById('tokenDisplay').value = '';
+    disconnectWs();
+  }
+
+  async function getMe() {
+    const res = await api('GET', 'auth', '/auth/me');
+    if (res.ok) {
+      currentUser = res.data.user || res.data;
+      pretty(document.getElementById('meOutput'), res.data);
+      const badge = document.getElementById('userBadge');
+      badge.classList.remove('hidden');
+      document.getElementById('userEmail').textContent = currentUser.email;
+      document.getElementById('userRole').textContent = currentUser.role;
+    }
+    return res;
+  }
+
+  // ── Rider ─────────────────────────────────────────────────────────────────
+
+  async function requestRide() {
+    const res = await api('POST', 'ride', '/rides', {
+      pickupLocation: {
+        lat: parseFloat(document.getElementById('pickup-lat').value),
+        lng: parseFloat(document.getElementById('pickup-lng').value),
+        address: document.getElementById('pickup-addr').value,
+      },
+      dropoffLocation: {
+        lat: parseFloat(document.getElementById('dropoff-lat').value),
+        lng: parseFloat(document.getElementById('dropoff-lng').value),
+        address: document.getElementById('dropoff-addr').value,
+      },
+    });
+    pretty(document.getElementById('rideOutput'), res.data);
+    if (res.ok) {
+      const id = res.data.ride?.id || res.data.id;
+      if (id) {
+        document.getElementById('rideId').value = id;
+        document.getElementById('drvRideId').value = id;
+        document.getElementById('pay-rideId').value = id;
+      }
+    }
+  }
+
+  async function getRide() {
+    const id = document.getElementById('rideId').value.trim();
+    if (!id) return;
+    const res = await api('GET', 'ride', `/rides/${id}`);
+    pretty(document.getElementById('rideActionOutput'), res.data);
+  }
+
+  async function cancelRide() {
+    const id = document.getElementById('rideId').value.trim();
+    if (!id) return;
+    const res = await api('PATCH', 'ride', `/rides/${id}/cancel`);
+    pretty(document.getElementById('rideActionOutput'), res.data);
+  }
+
+  async function getRideHistory() {
+    const res = await api('GET', 'ride', '/rides/history');
+    const container = document.getElementById('rideHistory');
+    if (!res.ok) { container.innerHTML = `<span class="text-red-500">${JSON.stringify(res.data)}</span>`; return; }
+    const rides = res.data.rides || res.data || [];
+    if (!rides.length) { container.innerHTML = '<span class="text-gray-400">No rides found.</span>'; return; }
+    container.innerHTML = rides.map(r => `
+      <div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 text-xs">
+        <span class="font-mono text-gray-500">${r.id?.slice(0,8)}…</span>
+        <span class="font-medium">${r.status}</span>
+        <span class="text-gray-500">${r.pickup_address || ''} → ${r.dropoff_address || ''}</span>
+        <button onclick="document.getElementById('rideId').value='${r.id}';document.getElementById('drvRideId').value='${r.id}'" class="text-indigo-500 underline">use</button>
+      </div>
+    `).join('');
+  }
+
+  // ── Driver ────────────────────────────────────────────────────────────────
+
+  async function getDriverProfile() {
+    const res = await api('GET', 'driver', '/drivers/me');
+    pretty(document.getElementById('drvProfileOutput'), res.data);
+    if (res.ok) {
+      const d = res.data.driver || res.data;
+      if (d.first_name) document.getElementById('drv-fname').value = d.first_name;
+      if (d.last_name) document.getElementById('drv-lname').value = d.last_name;
+      if (d.license_no) document.getElementById('drv-license').value = d.license_no;
+      if (d.vehicle_make) document.getElementById('drv-make').value = d.vehicle_make;
+      if (d.vehicle_model) document.getElementById('drv-model').value = d.vehicle_model;
+      if (d.vehicle_plate) document.getElementById('drv-plate').value = d.vehicle_plate;
+    }
+  }
+
+  async function updateDriverProfile() {
+    const body = {};
+    const fields = {
+      first_name: 'drv-fname', last_name: 'drv-lname',
+      license_no: 'drv-license', vehicle_make: 'drv-make',
+      vehicle_model: 'drv-model', vehicle_plate: 'drv-plate',
+    };
+    for (const [key, id] of Object.entries(fields)) {
+      const val = document.getElementById(id).value.trim();
+      if (val) body[key] = val;
+    }
+    const res = await api('PATCH', 'driver', '/drivers/me', body);
+    pretty(document.getElementById('drvProfileOutput'), res.data);
+  }
+
+  async function updateLocation() {
+    const res = await api('PATCH', 'driver', '/drivers/location', {
+      lat: parseFloat(document.getElementById('drv-lat').value),
+      lng: parseFloat(document.getElementById('drv-lng').value),
+    });
+    log(`  location update: ${res.ok ? 'ok' : 'failed'}`, res.ok ? 'success' : 'error');
+  }
+
+  async function setAvailability(available) {
+    const res = await api('PATCH', 'driver', '/drivers/availability', { isAvailable: available });
+    pretty(document.getElementById('drvAvailOutput'), res.data);
+  }
+
+  async function acceptRide() {
+    const id = document.getElementById('drvRideId').value.trim();
+    if (!id) return;
+    const res = await api('PATCH', 'ride', `/rides/${id}/accept`);
+    pretty(document.getElementById('drvRideOutput'), res.data);
+  }
+
+  async function startRide() {
+    const id = document.getElementById('drvRideId').value.trim();
+    if (!id) return;
+    const res = await api('PATCH', 'ride', `/rides/${id}/start`);
+    pretty(document.getElementById('drvRideOutput'), res.data);
+  }
+
+  async function endRide() {
+    const id = document.getElementById('drvRideId').value.trim();
+    if (!id) return;
+    const res = await api('PATCH', 'ride', `/rides/${id}/end`);
+    pretty(document.getElementById('drvRideOutput'), res.data);
+  }
+
+  // ── Payments ──────────────────────────────────────────────────────────────
+
+  async function getPayment() {
+    const id = document.getElementById('pay-rideId').value.trim();
+    if (!id) return;
+    const res = await api('GET', 'payment', `/payments/${id}`);
+    pretty(document.getElementById('paymentOutput'), res.data);
+  }
+
+  async function getPaymentMethods() {
+    const res = await api('GET', 'payment', '/payments/methods');
+    const list = document.getElementById('paymentMethodsList');
+    if (!res.ok) { list.innerHTML = `<span class="text-red-500 text-sm">${JSON.stringify(res.data)}</span>`; return; }
+    const methods = res.data.methods || res.data || [];
+    if (!methods.length) { list.innerHTML = '<span class="text-gray-400 text-sm">No methods found.</span>'; return; }
+    list.innerHTML = methods.map(m => `
+      <div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+        <span class="text-sm font-medium">${m.type} •••• ${m.last_four || '—'}</span>
+        ${m.is_default ? '<span class="text-xs bg-indigo-100 text-indigo-600 rounded px-2 py-0.5">default</span>' : ''}
+        <button onclick="deletePaymentMethod('${m.id}')" class="text-red-500 hover:text-red-700 text-xs">Delete</button>
+      </div>
+    `).join('');
+  }
+
+  async function addPaymentMethod() {
+    const body = {
+      type: document.getElementById('pm-type').value,
+      lastFour: document.getElementById('pm-lastfour').value,
+      providerToken: document.getElementById('pm-token').value,
+      isDefault: document.getElementById('pm-default').checked,
+    };
+    const res = await api('POST', 'payment', '/payments/methods', body);
+    if (res.ok) getPaymentMethods();
+  }
+
+  async function deletePaymentMethod(id) {
+    const res = await api('DELETE', 'payment', `/payments/methods/${id}`);
+    if (res.ok) getPaymentMethods();
+  }
+
+  // ── WebSocket ─────────────────────────────────────────────────────────────
+
+  function wsLog(msg, type = 'text-gray-100') {
+    const container = document.getElementById('wsLog');
+    const placeholder = container.querySelector('.text-gray-500');
+    if (placeholder) placeholder.remove();
+    const line = document.createElement('div');
+    const time = new Date().toLocaleTimeString();
+    line.className = type;
+    line.textContent = `[${time}] ${msg}`;
+    container.appendChild(line);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function clearWsLog() {
+    document.getElementById('wsLog').innerHTML = '<div class="text-gray-500">WebSocket messages will appear here...</div>';
+  }
+
+  function updateWsStatus(connected) {
+    const dot = document.getElementById('wsStatusDot');
+    const statusEl = document.getElementById('wsStatus');
+    const indicator = document.getElementById('wsIndicator');
+    if (connected) {
+      dot.className = 'w-2.5 h-2.5 rounded-full bg-green-500';
+      statusEl.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span> <span class="text-green-600 font-medium">Connected</span>`;
+      indicator.className = 'inline-block w-2 h-2 rounded-full bg-green-500 ml-1';
+    } else {
+      dot.className = 'w-2.5 h-2.5 rounded-full bg-gray-400';
+      statusEl.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block"></span> <span class="text-gray-500">Disconnected</span>`;
+      indicator.className = 'inline-block w-2 h-2 rounded-full bg-gray-400 ml-1';
+    }
+  }
+
+  function connectWs() {
+    if (!token) { alert('Login first to get a token.'); return; }
+    if (ws && ws.readyState === WebSocket.OPEN) { wsLog('Already connected.', 'text-yellow-400'); return; }
+
+    const url = `${SERVICES.ws}?token=${token}`;
+    wsLog(`Connecting to ${url}…`, 'text-gray-400');
+    log(`WS connect: ${SERVICES.ws}`, 'ws');
+    ws = new WebSocket(url);
+
+    ws.onopen = () => {
+      updateWsStatus(true);
+      wsLog('Connection established.', 'text-green-400');
+      log('WS connected', 'ws');
+    };
+
+    ws.onmessage = (evt) => {
+      try {
+        const msg = JSON.parse(evt.data);
+        wsLog(`← ${JSON.stringify(msg)}`, 'text-purple-300');
+        log(`WS message: ${msg.type}`, 'ws', msg);
+      } catch {
+        wsLog(`← ${evt.data}`, 'text-purple-300');
+      }
+    };
+
+    ws.onclose = (e) => {
+      updateWsStatus(false);
+      wsLog(`Disconnected (code ${e.code}).`, 'text-gray-500');
+      log('WS disconnected', 'ws');
+    };
+
+    ws.onerror = (e) => {
+      wsLog('WebSocket error — check console and ensure notification-service is running on port 3006.', 'text-red-400');
+      log('WS error', 'error');
+    };
+  }
+
+  function disconnectWs() {
+    if (ws) { ws.close(); ws = null; }
+  }
+
+  // ── Tabs ──────────────────────────────────────────────────────────────────
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active', 'bg-white', 'text-indigo-600', 'shadow'));
+    document.getElementById(`pane-${name}`).classList.remove('hidden');
+    const btn = document.getElementById(`tab-${name}`);
+    btn.classList.add('active', 'bg-white', 'text-indigo-600', 'shadow');
+  }
+
+  // Init
+  switchTab('auth');
+</script>
+</body>
+</html>

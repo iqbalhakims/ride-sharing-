@@ -1,6 +1,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json* ./
+COPY tsconfig.base.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY services/matching-service/package.json ./services/matching-service/
 RUN npm install --workspace=packages/shared --workspace=services/matching-service

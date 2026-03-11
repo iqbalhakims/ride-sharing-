@@ -1,6 +1,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json* ./
+COPY tsconfig.base.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY services/payment-service/package.json ./services/payment-service/
 RUN npm install --workspace=packages/shared --workspace=services/payment-service
